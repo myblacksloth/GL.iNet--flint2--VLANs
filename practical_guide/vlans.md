@@ -8,6 +8,8 @@
   - [Rimuovere la LAN principale da br-lan di default e associarla alla VLAN principale](#rimuovere-la-lan-principale-da-br-lan-di-default-e-associarla-alla-vlan-principale)
   - [Definire le interfacce per tutte le VLAN](#definire-le-interfacce-per-tutte-le-vlan)
     - [Definizione di tutte le interfacce](#definizione-di-tutte-le-interfacce)
+      - [Versioni piu' vecchie](#versioni-piu-vecchie)
+      - [Versioni nuove (es.21...)](#versioni-nuove-es21)
   - [Consentire la gestione del router dall'interfaccia home (via firewall)](#consentire-la-gestione-del-router-dallinterfaccia-home-via-firewall)
 - [Configurare le reti wireless](#configurare-le-reti-wireless)
 - [Regole firewall](#regole-firewall)
@@ -88,30 +90,41 @@ SCR-20260420-kthu
 
 |  Interfaccia vecchia | Interfaccia nuova  |
 | ------------ | ------------ |
-|  ![](stuff/i/SCR-20260420-ktwh.png) |   |
-| ![](stuff/i/SCR-20260420-kvuw.png)  |   |
+|  ![](stuff/i/SCR-20260420-ktwh.png) |  ![](stuff/i/SCR-20260422-rjkv.png) |
+| | ![](stuff/i/SCR-20260422-rjwx.png) |
+| ![](stuff/i/SCR-20260420-kvuw.png)  |  ![](stuff/i/SCR-20260422-rkde.png) |
 | ![](stuff/i/SCR-20260420-kwgs.png)  |   |
+
+<!--
+![](stuff/i/.png)
+-->
+
+SCR-20260422-rkde
 
 ## Rimuovere la LAN principale da br-lan di default e associarla alla VLAN principale
 
 > [!IMPORTANT]  
 > Passaggio fondamentale per evitare problemi di connessione in questa fase
 
+![](stuff/i/SCR-20260422-rlcy.png)
+
 |  Interfaccia vecchia | Interfaccia nuova  |
 | ------------ | ------------ |
-| ![](stuff/i/SCR-20260420-kygj.png)  | ![](stuff/i/.png)  |
+| ![](stuff/i/SCR-20260420-kygj.png)  | ![](stuff/i/SCR-20260422-rkqo.png)  |
 
 ## Definire le interfacce per tutte le VLAN
 
 |  Interfaccia vecchia | Interfaccia nuova  |
 | ------------ | ------------ |
-| ![](stuff/i/SCR-20260420-kyut.png)  | ![](stuff/i/.png)  |
-| ![](stuff/i/.png)  | ![](stuff/i/.png)  |
+| ![](stuff/i/SCR-20260420-kyut.png)  | ![](stuff/i/SCR-20260422-rljz.png)  |
+<!-- | ![](stuff/i/.png)  |   | -->
 
 
 ### Definizione di tutte le interfacce
 
 **Ripetere il procedimento per ciascuna VLAN**
+
+#### Versioni piu' vecchie
 
 | Dettagli  | Screenshot  |
 | ------------ | ------------ |
@@ -120,6 +133,17 @@ SCR-20260420-kthu
 | Assegnazione IP statico per la VLAN | ![](stuff/i/SCR-20260420-laje.png)  |
 | Creare nuova zona firewall per la VLAN | ![](stuff/i/SCR-20260420-lapt.png)  |
 |  Risultato | ![](stuff/i/SCR-20260420-layo.png)  |
+
+#### Versioni nuove (es.21...)
+
+| Dettagli  | Screenshot  |
+| ------------ | ------------ |
+|  definzione dell'interfaccia |  ![](stuff/i/SCR-20260422-ronl.png) |
+|   |  ![](stuff/i/SCR-20260422-rmqs.png) |
+|   |  ![](stuff/i/SCR-20260422-rnue.png) |
+|   |  ![](stuff/i/SCR-20260422-rnzm.png) |
+|   |  ![](stuff/i/SCR-20260422-rnqe.png) |
+|   |  ![](stuff/i/.png) |
 
 ## Consentire la gestione del router dall'interfaccia home (via firewall)
 
