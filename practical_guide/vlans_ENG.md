@@ -54,7 +54,7 @@
 # Why this guide
 
 This guide was born from the need to have a practical-technical reference for setting up VLANs on GL.iNet routers via the LuCI interface (directly through OpenWRT).
-The main material available is on YouTube, but there are currently no practical written guides in English.
+The main material available is on YouTube, but there are currently no practical written guides in Italian.
 
 > [!NOTE]  
 > In the age of AI, this guide was NOT written with the help of AI.

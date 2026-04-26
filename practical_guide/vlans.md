@@ -23,6 +23,7 @@
     - [Configurazione](#configurazione)
     - [Regole firewall per il funzionamento](#regole-firewall-per-il-funzionamento)
     - [Attivazione](#attivazione)
+- [Riepilogo configurazione basilare](#riepilogo-configurazione-basilare)
 - [Trubleshooting](#trubleshooting)
   - [Firewall](#firewall)
   - [Vecchi OpenWRT (o anche nuovi???) traffico non funziona (da confermare)](#vecchi-openwrt-o-anche-nuovi-traffico-non-funziona-da-confermare)
@@ -53,6 +54,11 @@
   - [Riepilogo visivo](#riepilogo-visivo)
   - [Glossario rapido](#glossario-rapido)
 
+
+> [!CAUTION]
+> L'autore di questa guida NON si assume alcuna responsabilita' sui danni a cose e/o persone derivanti dalla consultazione della stessa e dalla messa in opera del materiale in essa rappresentato.
+> L'utente, seguendo i passaggi di seguito indicati, si assume la piena responsabilita' di eventuali danni apportati alle apparecchiature hardware sulle quali esegue modifiche rispetto allo stato originale del software
+
 # Il perche' di questa guida
 
 Questa guida nasce dall'esigenza di avere una guida tecnico-pratica per la definizione delle VLAN sui router GL.iNet via interfaccia LuCi (direttamente via OpenWRT).
@@ -73,6 +79,15 @@ Il principale materiale a disposizione e' su YouTube ma non vi sono, al momento,
 4. configurazione di Avahi per mDNS intra-zones (nei test effettuati non ha funzionato)
 5. Troubleshooting
 6. Test
+
+> [!TIP]
+> Se si hanno dubbi su quello che si sta facendo, provare prima a configurare una singola VLAN
+>
+> (sezione [Riepilogo configurazione basilare](#riepilogo-configurazione-basilare))
+>
+> e poi tutte le altre.
+> 
+> La sezione indicata rappresenta un'implementazione basilare e funzionante di configurazione completa ma non implementa tutte le regole firewall necessarie per ottenere il livello di sicurezza desiderato
 
 # Condizioni preliminari
 
@@ -256,7 +271,7 @@ SCR-20260422-rkde
 # Configurazione di Avhai per mDNS intra-zones
 
 > [!TIP]
-> Se la connessione ssh non funziona provare con il seguente comando:
+> Su alcuni router e' necessario usare questo comando SSH:
 
 ```bash
 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa root@192.168.10.1
@@ -267,7 +282,7 @@ ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa root@192.16
 | Abilitare accesso SSH da VLAN home  |  ![](stuff/i/SCR-20260420-llvs.png) |
 |  Testare connessione SSH |  ![](stuff/i/SCR-20260420-lmsf.png) |
 |  Cercare pacchetti Avahi |  ![](stuff/i/SCR-20260420-loat.png) |
-|  Installazione di Avahi |  ![](stuff/i/SCR-20260420-logg.png) |
+|  Installazione di Avahi (**usare versione DBUS**) |  ![](stuff/i/SCR-20260420-logg.png) |
 |  Pacchetti installati |  ![](stuff/i/SCR-20260426-lbgo.png) |
 
 ## Configurazione di Avahi
@@ -346,6 +361,48 @@ Riavviare il servizio:
 ps | grep avahi
 logread | grep -i avahi
 ```
+
+# Riepilogo configurazione basilare
+
+> [!NOTE]  
+> Questa sezione rappresenta una configurazione funzionante basilare che costituisce un breve riepilogo di quanto visto finora
+
+> [!IMPORTANT]  
+> Questo e' solo un esempio, non implementa tutte le regole di sicurezza necessarie
+
+> [!TIP]  
+> Si consiglia di configurare le regole firewall come segue:
+> 
+> per prima cosa abilitare regole generiche di forwarding tra zone:
+> per sicurezza disattivare input e forward (che verra' configurato, se ove necessario, tramite traffic rules)
+> 
+> 1. abilitare DNS per tutte le zone
+> 2. abilitare DHCP per tutte le zone
+> 3. abilitare regole specifiche per il traffico desiderato
+> 4. abilitare mDNS dove necessario
+> 5. disabilitare tutto il traffico da una certa zona verso le altre
+
+
+|  Descrizione | Screenshot  |
+| ------------ | ------------ |
+| Configurazione dello switch fisico  |  ![](./stuff/i/r1/SCR-20260426-lemh.png) |
+| Configurazione delle interfacce  |  ![](./stuff/i/r1/SCR-20260426-leve.png) |
+| Reti wireless  |  ![](./stuff/i/r1/SCR-20260426-lfgq.png) |
+| Zone firewall  |  ![](./stuff/i/r1/SCR-20260426-lftw.png) |
+| Traffic rules fiewall  |  ![](./stuff/i/r1/SCR-20260426-lgoq.png) |
+| Avahi per mDNS  |  ![](./stuff/i/r1/SCR-20260426-licz.png) |
+<!-- |   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) | -->
 
 # Trubleshooting
 
