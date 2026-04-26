@@ -24,6 +24,7 @@
     - [Regole firewall per il funzionamento](#regole-firewall-per-il-funzionamento)
     - [Attivazione](#attivazione)
 - [Riepilogo configurazione basilare](#riepilogo-configurazione-basilare)
+  - [Eventuali regole per IoT-\>home](#eventuali-regole-per-iot-home)
 - [Trubleshooting](#trubleshooting)
   - [Firewall](#firewall)
   - [Vecchi OpenWRT (o anche nuovi???) traffico non funziona (da confermare)](#vecchi-openwrt-o-anche-nuovi-traffico-non-funziona-da-confermare)
@@ -275,6 +276,8 @@ SCR-20260422-rkde
 
 ```bash
 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa root@192.168.10.1
+
+scp -O -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa root@192.168.10.1:/root/file ./
 ```
 
 | Dettagli  | Screenshot  |
@@ -389,7 +392,7 @@ logread | grep -i avahi
 | Configurazione delle interfacce  |  ![](./stuff/i/r1/SCR-20260426-leve.png) |
 | Reti wireless  |  ![](./stuff/i/r1/SCR-20260426-lfgq.png) |
 | Zone firewall  |  ![](./stuff/i/r1/SCR-20260426-lftw.png) |
-| Traffic rules fiewall  |  ![](./stuff/i/r1/SCR-20260426-lgoq.png) |
+| Traffic rules fiewall (il ban iot->home è tecnicamente **SUPERFLUO** in quanto la zona iot già prevede il blocco del forwarding dalla configurazione delle zone firewall)  |  ![](./stuff/i/r1/SCR-20260426-lgoq.png) |
 | Avahi per mDNS  |  ![](./stuff/i/r1/SCR-20260426-licz.png) |
 <!-- |   |  ![](./stuff/i/r1/.png) |
 |   |  ![](./stuff/i/r1/.png) |
@@ -403,6 +406,12 @@ logread | grep -i avahi
 |   |  ![](./stuff/i/r1/.png) |
 |   |  ![](./stuff/i/r1/.png) |
 |   |  ![](./stuff/i/r1/.png) | -->
+
+## Eventuali regole per IoT->home
+
+- Il traffico da home e' abilitato di default verso ogni zona (forwarding di zona abilitato + traffico intra-vlan configurato dalle regole della zona)
+
+![](./stuff/i/SCR-20260426-qqiw.png)
 
 # Trubleshooting
 
