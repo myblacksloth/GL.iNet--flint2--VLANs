@@ -15,11 +15,14 @@
 - [Regole firewall](#regole-firewall)
   - [Tutte le zone devono poter raggiungere la WAN (accesso a internet)](#tutte-le-zone-devono-poter-raggiungere-la-wan-accesso-a-internet)
   - [Abilitare DNS per tutte le zone](#abilitare-dns-per-tutte-le-zone)
-  - [Avilitare DHCP per le zone](#avilitare-dhcp-per-le-zone)
+  - [Abilitare DHCP per le zone](#abilitare-dhcp-per-le-zone)
   - [Regole di forwarding intra-zones](#regole-di-forwarding-intra-zones)
   - [Regole firewall custom](#regole-firewall-custom)
 - [Configurazione di Avhai per mDNS intra-zones](#configurazione-di-avhai-per-mdns-intra-zones)
   - [Configurazione di Avahi](#configurazione-di-avahi)
+    - [Configurazione](#configurazione)
+    - [Regole firewall per il funzionamento](#regole-firewall-per-il-funzionamento)
+    - [Attivazione](#attivazione)
 - [Trubleshooting](#trubleshooting)
   - [Firewall](#firewall)
   - [Vecchi OpenWRT (o anche nuovi???) traffico non funziona (da confermare)](#vecchi-openwrt-o-anche-nuovi-traffico-non-funziona-da-confermare)
@@ -209,7 +212,7 @@ SCR-20260422-rkde
 |  Abilitare regole DNS per tutte le zone (altrimenti DNS non funziona) |  ![](stuff/i/SCR-20260420-lgsp.png) |
 | Regole DNS definite |  ![](stuff/i/SCR-20260420-lhej.png) |
 
-## Avilitare DHCP per le zone
+## Abilitare DHCP per le zone
 
 > [!IMPORTANT]  
 > Configurare per tutte le zone VLAN
@@ -265,9 +268,14 @@ ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa root@192.16
 |  Testare connessione SSH |  ![](stuff/i/SCR-20260420-lmsf.png) |
 |  Cercare pacchetti Avahi |  ![](stuff/i/SCR-20260420-loat.png) |
 |  Installazione di Avahi |  ![](stuff/i/SCR-20260420-logg.png) |
-|  Pacchetti installati |  ![](stuff/i/SCR-20260420-lpav.png) |
+|  Pacchetti installati |  ![](stuff/i/SCR-20260426-lbgo.png) |
 
 ## Configurazione di Avahi
+
+> [!WARNING]  
+> Come indicato nella sezione firewall, per il corretto funzionamento di mDNS occorre anche configurare le regole firewall come indicato di seguito!
+
+### Configurazione
 
 File di configurazione:
 
@@ -277,16 +285,56 @@ Modificare in base alle proprie zone
 
 ```ini
 [server]
+#host-name=foo
+#domain-name=local
 use-ipv4=yes
-use-ipv6=no
-allow-interfaces=br-home,br-iot   # le tue VLAN/bridge
-ratelimit-interval-usec=1000000
-ratelimit-burst=1000
+use-ipv6=yes
+check-response-ttl=no
+use-iff-running=no
+allow-interfaces=br-home,br-iot
+
+[publish]
+publish-addresses=yes
+publish-hinfo=yes
+publish-workstation=no
+publish-domain=yes
+#publish-dns-servers=192.168.1.1
+#publish-resolv-conf-dns-servers=yes
 
 [reflector]
 enable-reflector=yes
 reflect-ipv=no
+
+[rlimits]
+#rlimit-as=
+rlimit-core=0
+rlimit-data=4194304
+rlimit-fsize=0
+rlimit-nofile=30
+rlimit-stack=4194304
+rlimit-nproc=3
 ```
+
+**Prestare massima attenzione a**
+
+```ini
+allow-interfaces=br-home,br-iot
+enable-reflector=yes
+```
+
+### Regole firewall per il funzionamento
+
+|  Descrizione | Screenshot  |
+| ------------ | ------------ |
+| Creare regola per permettere il traffico mDNS dalla zona iot al router  |  ![](./stuff/i/SCR-20260426-lcmr.png) |
+| Risultato  |  ![](./stuff/i/SCR-20260426-lcwf.png) |
+<!-- |   |  ![](./stuff/i/.png) |
+|   |  ![](./stuff/i/.png) | -->
+
+> [!TIP]
+> Sarebbe opportuno abilitare mDNS per tutte le zone!
+
+### Attivazione
 
 Riavviare il servizio:
 
@@ -298,9 +346,6 @@ Riavviare il servizio:
 ps | grep avahi
 logread | grep -i avahi
 ```
-
-> [!WARNING]  
-> Come indicato nella sezione firewall, per il corretto funzionamento di mDNS occorre anche configurare le regole firewall!
 
 # Trubleshooting
 
