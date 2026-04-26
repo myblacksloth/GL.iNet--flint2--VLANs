@@ -99,7 +99,7 @@ SCR-20260420-ksqv
 
 ## Modifica indirizzo di rete di default
 
-SCR-20260420-kthu
+![](./stuff/i/SCR-20260420-kthu.png)
 
 # Configurazione delle VLAN per i dispositivi fisici
 

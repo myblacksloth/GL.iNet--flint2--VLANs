@@ -1,6 +1,6 @@
 
 > [!NOTE]  
-> The original guide is in Italian. This translation was produced by AI
+> The original guide is in Italian. This translation was produced by AI.
 
 - [Why this guide](#why-this-guide)
 - [Steps covered](#steps-covered)
@@ -8,42 +8,45 @@
   - [VLAN connection](#vlan-connection)
   - [Changing the default network address](#changing-the-default-network-address)
 - [Configuring VLANs for physical devices](#configuring-vlans-for-physical-devices)
-  - [Remove the main LAN from the default br-lan and associate it with the main VLAN](#remove-the-main-lan-from-the-default-br-lan-and-associate-it-with-the-main-vlan)
+  - [Remove the main LAN from the default `br-lan` and associate it with the main VLAN](#remove-the-main-lan-from-the-default-br-lan-and-associate-it-with-the-main-vlan)
   - [Define interfaces for all VLANs](#define-interfaces-for-all-vlans)
     - [Defining all interfaces](#defining-all-interfaces)
-  - [Allow router management from the home interface (via firewall)](#allow-router-management-from-the-home-interface-via-firewall)
-- [Configuring wireless networks](#configuring-wireless-networks)
+      - [Older versions](#older-versions)
+      - [Newer versions \(e.g. 21...\)](#newer-versions-eg-21)
+  - [Allow router management from the home interface \(via firewall\)](#allow-router-management-from-the-home-interface-via-firewall)
+- [Configure wireless networks](#configure-wireless-networks)
 - [Firewall rules](#firewall-rules)
-  - [All zones must be able to reach the WAN (internet access)](#all-zones-must-be-able-to-reach-the-wan-internet-access)
+  - [All zones must be able to reach the WAN \(internet access\)](#all-zones-must-be-able-to-reach-the-wan-internet-access)
   - [Enable DNS for all zones](#enable-dns-for-all-zones)
-  - [Enable DHCP for zones](#enable-dhcp-for-zones)
+  - [Enable DHCP for the zones](#enable-dhcp-for-the-zones)
   - [Intra-zone forwarding rules](#intra-zone-forwarding-rules)
   - [Custom firewall rules](#custom-firewall-rules)
 - [Configuring Avahi for intra-zone mDNS](#configuring-avahi-for-intra-zone-mdns)
   - [Avahi configuration](#avahi-configuration)
+    - [Configuration](#configuration)
+    - [Firewall rules required for operation](#firewall-rules-required-for-operation)
+    - [Activation](#activation)
+- [Basic configuration summary](#basic-configuration-summary)
+  - [Possible IoT-\>home rules](#possible-iot-home-rules)
 - [Troubleshooting](#troubleshooting)
   - [Firewall](#firewall)
-  - [Old OpenWRT (or new too???) traffic not working (to be confirmed)](#old-openwrt-or-new-too-traffic-not-working-to-be-confirmed)
+  - [Intra-VLAN traffic does not work](#intra-vlan-traffic-does-not-work)
   - [(broken luci) Add rule for server-\>iot](#broken-luci-add-rule-for-server-iot)
   - [Corrupted LuCI](#corrupted-luci)
-  - [Avahi not working (still to be fixed)](#avahi-not-working-still-to-be-fixed)
-- [Network testing](#network-testing)
-  - [Manual MAC address to IP assignment](#manual-mac-address-to-ip-assignment)
-  - [Updating firewall rules for a realistic environment](#updating-firewall-rules-for-a-realistic-environment)
-  - [Useful commands](#useful-commands)
+- [Useful commands](#useful-commands)
     - [DHCP](#dhcp)
     - [Check firewall rules](#check-firewall-rules)
-    - [Adding rules via SSH](#adding-rules-via-ssh)
-    - [Fixing rules via SSH](#fixing-rules-via-ssh)
+    - [Add rules via SSH](#add-rules-via-ssh)
+    - [Fix rules via SSH](#fix-rules-via-ssh)
+- [Network testing](#network-testing)
   - [Path testing](#path-testing)
-  - [Avahi testing](#avahi-testing)
 - [Explanations for nOObs](#explanations-for-noobs)
-  - [What is a local network (LAN)?](#what-is-a-local-network-lan)
+  - [What is a local network \(LAN\)?](#what-is-a-local-network-lan)
   - [What is a switch?](#what-is-a-switch)
   - [What is a VLAN?](#what-is-a-vlan)
   - [What are OpenWRT and LuCI?](#what-are-openwrt-and-luci)
-  - [Why do the guide steps need to be done in this order?](#why-do-the-guide-steps-need-to-be-done-in-this-order)
-    - [1. First configure the physical switch (VLANs on physical devices)](#1-first-configure-the-physical-switch-vlans-on-physical-devices)
+  - [Why must the guide steps be done in this order?](#why-must-the-guide-steps-be-done-in-this-order)
+    - [1. First configure the physical switch \(VLANs on physical devices\)](#1-first-configure-the-physical-switch-vlans-on-physical-devices)
     - [2. Then create the logical interfaces](#2-then-create-the-logical-interfaces)
     - [3. Then configure the wireless networks](#3-then-configure-the-wireless-networks)
     - [4. Then configure the firewall](#4-then-configure-the-firewall)
@@ -51,31 +54,45 @@
   - [Visual summary](#visual-summary)
   - [Quick glossary](#quick-glossary)
 
+
+> [!CAUTION]
+> The author of this guide accepts NO responsibility for damage to property and/or persons resulting from consulting this guide or applying the material shown in it.
+> By following the steps below, the user assumes full responsibility for any damage caused to the hardware on which they make changes from the software's original state.
+
 # Why this guide
 
-This guide was born from the need to have a practical-technical reference for setting up VLANs on GL.iNet routers via the LuCI interface (directly through OpenWRT).
-The main material available is on YouTube, but there are currently no practical written guides in Italian.
+This guide comes from the need for a practical technical guide for defining VLANs on GL.iNet routers through the LuCI interface (directly via OpenWRT).
+Most of the material currently available is on YouTube, but at the moment there are no practical written guides in Italian.
 
 > [!NOTE]  
-> In the age of AI, this guide was NOT written with the help of AI.
+> In the age of AI, this guide was NOT written using AI.
 >
-> Features not marked as *not working*, *incomplete* or *questionable* have been manually tested.
->
-> Should any paragraphs be produced with AI assistance in the future, this will be explicitly stated.
+> Features not marked as *not working*, *incomplete*, or *dubious* have been manually tested.
+> 
+> If, in the future, any paragraphs are produced with the help of AI, this will be explicitly stated.
 
 # Steps covered
 
-1. Defining VLANs for physical interfaces
-2. Defining VLANs via interfaces
-3. Firewall rules for intra-zone traffic
-4. Configuring Avahi for intra-zone mDNS (did not work in testing)
+1. defining VLANs for physical interfaces
+2. defining VLANs through interfaces
+3. firewall rules for intra-zone traffic
+4. configuring Avahi for intra-zone mDNS (it did not work in the tests carried out)
 5. Troubleshooting
 6. Testing
+
+> [!TIP]
+> If you are unsure about what you are doing, first try configuring a single VLAN
+>
+> (section [Basic configuration summary](#basic-configuration-summary))
+>
+> and only then configure all the others.
+> 
+> The indicated section is a basic working implementation of a complete configuration, but it does not include all firewall rules needed to obtain the desired security level.
 
 # Prerequisites
 
 > [!IMPORTANT]  
-> Save without applying — only apply changes in bulk at the end of each block.
+> Save without applying, and apply changes in bulk only at the end of each block.
 >
 > The management network used at this stage is the default 5GHz network.
 
@@ -91,63 +108,85 @@ SCR-20260420-kthu
 
 |  Old interface | New interface  |
 | ------------ | ------------ |
-|  ![](stuff/i/SCR-20260420-ktwh.png) |   |
-| ![](stuff/i/SCR-20260420-kvuw.png)  |   |
+|  ![](stuff/i/SCR-20260420-ktwh.png) |  ![](stuff/i/SCR-20260422-rjkv.png) |
+| | ![](stuff/i/SCR-20260422-rjwx.png) |
+| ![](stuff/i/SCR-20260420-kvuw.png)  |  ![](stuff/i/SCR-20260422-rkde.png) |
 | ![](stuff/i/SCR-20260420-kwgs.png)  |   |
 
-## Remove the main LAN from the default br-lan and associate it with the main VLAN
+<!--
+![](stuff/i/.png)
+-->
+
+SCR-20260422-rkde
+
+## Remove the main LAN from the default `br-lan` and associate it with the main VLAN
 
 > [!IMPORTANT]  
-> This is a fundamental step to avoid connection issues at this stage.
+> Fundamental step to avoid connection issues at this stage.
+
+![](stuff/i/SCR-20260422-rlcy.png)
 
 |  Old interface | New interface  |
 | ------------ | ------------ |
-| ![](stuff/i/SCR-20260420-kygj.png)  | ![](stuff/i/.png)  |
+| ![](stuff/i/SCR-20260420-kygj.png)  | ![](stuff/i/SCR-20260422-rkqo.png)  |
 
 ## Define interfaces for all VLANs
 
 |  Old interface | New interface  |
 | ------------ | ------------ |
-| ![](stuff/i/SCR-20260420-kyut.png)  | ![](stuff/i/.png)  |
-| ![](stuff/i/.png)  | ![](stuff/i/.png)  |
+| ![](stuff/i/SCR-20260420-kyut.png)  | ![](stuff/i/SCR-20260422-rljz.png)  |
+<!-- | ![](stuff/i/.png)  |   | -->
 
 
 ### Defining all interfaces
 
 **Repeat the procedure for each VLAN**
 
+#### Older versions
+
 | Details  | Screenshot  |
 | ------------ | ------------ |
-| Creating the home interface | ![](stuff/i/SCR-20260420-kzof.png)  |
-| Setting up DHCP for the interface (do this first because the GUI has a bug on older versions) | ![](stuff/i/SCR-20260420-kzyw.png)  |
-| Assigning a static IP for the VLAN | ![](stuff/i/SCR-20260420-laje.png)  |
-| Creating a new firewall zone for the VLAN | ![](stuff/i/SCR-20260420-lapt.png)  |
+| Create the `home` interface | ![](stuff/i/SCR-20260420-kzof.png)  |
+| Set DHCP for the interface (do this first because the graphical interface has a bug on older versions) | ![](stuff/i/SCR-20260420-kzyw.png)  |
+| Assign a static IP to the VLAN | ![](stuff/i/SCR-20260420-laje.png)  |
+| Create a new firewall zone for the VLAN | ![](stuff/i/SCR-20260420-lapt.png)  |
 | Result | ![](stuff/i/SCR-20260420-layo.png)  |
+
+#### Newer versions (e.g. 21...)
+
+| Details  | Screenshot  |
+| ------------ | ------------ |
+|  interface definition |  ![](stuff/i/SCR-20260422-ronl.png) |
+|   |  ![](stuff/i/SCR-20260422-rmqs.png) |
+|   |  ![](stuff/i/SCR-20260422-rnue.png) |
+|   |  ![](stuff/i/SCR-20260422-rnzm.png) |
+|   |  ![](stuff/i/SCR-20260422-rnqe.png) |
+|   |  ![](stuff/i/.png) |
 
 ## Allow router management from the home interface (via firewall)
 
 > [!NOTE]  
-> Ignore the pre-configured firewall rules and consider only the rule in question.
+> Ignore the preconfigured firewall rules and consider only the one being discussed here.
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
-|  Allow input rule from home zone |  ![](stuff/i/SCR-20260420-lcgy.png) |
+|  Allow input rule from the `home` zone |  ![](stuff/i/SCR-20260420-lcgy.png) |
 |   |  ![](stuff/i/.png) |
 
 > [!TIP]
-> At this point you can apply the changes.
+> At this point it is possible to apply the changes.
 
-# Configuring wireless networks
+# Configure wireless networks
 
 > [!TIP]
-> The router will be managed from the home VLAN, so I won't create a WLAN for the management VLAN.
+> The router will be managed from the `home` VLAN, so I do not create a WLAN for the management VLAN.
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
-|  Associate the default 5GHz network with the home VLAN |  ![](stuff/i/SCR-20260420-ldar.png) |
-| Delete the default 2.4GHz network to avoid interface startup issues  |  ![](stuff/i/SCR-20260420-ldlv.png) |
-| Creating wireless networks for the VLANs  |  ![](stuff/i/SCR-20260420-ldzg.png) |
-| Setting the network password and security type  |  ![](stuff/i/SCR-20260420-lefk.png) |
+|  Associate the default 5GHz network with the `home` VLAN |  ![](stuff/i/SCR-20260420-ldar.png) |
+| Delete the default 2.4GHz network to avoid interface startup problems |  ![](stuff/i/SCR-20260420-ldlv.png) |
+| Create the wireless networks for the VLANs |  ![](stuff/i/SCR-20260420-ldzg.png) |
+| Set the password and security type of the network |  ![](stuff/i/SCR-20260420-lefk.png) |
 
 > [!NOTE]  
 > If needed, also configure the 5GHz networks.
@@ -155,44 +194,44 @@ SCR-20260420-kthu
 # Firewall rules
 
 > [!TIP]
-> Keep in mind the relationship: ZONE > zone settings (input, output, reject) > Traffic rules
+> Keep in mind the relationship ZONE > zone settings (input, output, reject) > Traffic rules
 >
-> Additional info below.
+> additional information follows below
 
 > [!IMPORTANT]  
-> In the section "*Old OpenWRT (or new too???) traffic not working (to be confirmed)*" there is information about zone configuration found in the official documentation and forums.
+> In the section "*Old OpenWRT (or new too???) traffic not working (to be confirmed)*" there is information about zone configuration gathered from official documentation and forums.
 >
-> The content shown there is pending confirmation.
+> The illustrated contents are still awaiting confirmation.
 >
-> Check that section as well for a clearer overview.
+> Review that section as well to get a clearer overview.
 
 > [!NOTE]  
-> input, output, forward refer to the router itself.
+> input, output, forward refer to the router itself
 >
 > input = from the zone toward the router
 > output = from the router toward the zone
-> forward = from one zone to another passing through the router
+> forward = from one zone to another through the router
 
 ## All zones must be able to reach the WAN (internet access)
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
-|  Preliminary note: the basic configuration works per zone (zone + standard rules) — initially think in terms of columns |  ![](stuff/i/SCR-20260420-lfdm.png) |
+|  Preliminary note: the basic configuration works per zone (zone + standard rules) - initially think column by column |  ![](stuff/i/SCR-20260420-lfdm.png) |
 |  Allow forwarding from all zones to the WAN zone |  ![](stuff/i/SCR-20260420-lfkl.png) |
 
 ## Enable DNS for all zones
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
-| Traffic rules tab  |  ![](stuff/i/SCR-20260420-lgdh.png) |
-| Where to create new rules  |  ![](stuff/i/SCR-20260420-lghx.png) |
-|  Enable DNS rules for all zones (otherwise DNS won't work) |  ![](stuff/i/SCR-20260420-lgsp.png) |
+| Traffic rules tab |  ![](stuff/i/SCR-20260420-lgdh.png) |
+| Where to create new rules |  ![](stuff/i/SCR-20260420-lghx.png) |
+|  Enable DNS rules for all zones (otherwise DNS will not work) |  ![](stuff/i/SCR-20260420-lgsp.png) |
 | Defined DNS rules |  ![](stuff/i/SCR-20260420-lhej.png) |
 
-## Enable DHCP for zones
+## Enable DHCP for the zones
 
 > [!IMPORTANT]  
-> Configure for all VLAN zones.
+> Configure it for all VLAN zones.
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
@@ -203,51 +242,58 @@ SCR-20260420-kthu
 
 > [!TIP]
 > Always keep in mind that OpenWRT's firewall works per zone!
+> 
+> So make changes zone by zone. For example, from `iot`, choose which destinations forwarding is allowed to.
 >
-> So make changes per individual zone! For example, from iot choose who you can forward to.
->
-> Repeat the configuration for all zones until you achieve the desired result.
+> Repeat the configuration for all zones until you get the desired result.
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
-|  Rules between zones |  ![](stuff/i/SCR-20260420-lifd.png) |
-| Example of how to make changes  |  ![](stuff/i/SCR-20260420-lipx.png) |
+|  rules between zones |  ![](stuff/i/SCR-20260420-lifd.png) |
+| Example of how to make the changes |  ![](stuff/i/SCR-20260420-lipx.png) |
 
 ## Custom firewall rules
 
 > [!NOTE]  
-> Configure according to your personal needs.
+> Configure according to your own needs.
 
 > [!TIP]
-> If configuration is done by IP address rather than MAC address, make sure the involved IP addresses are configured statically (static IP-to-MAC binding).
+> If the configuration is done by IP address rather than MAC address, make sure the involved IP addresses are configured statically (static binding between IP and MAC).
 
 > [!IMPORTANT]  
-> For devices that need to communicate intra-zone via mDNS, a dedicated service must be configured (preferably via Avahi).
+> For devices that must communicate across zones via mDNS, you need to configure a dedicated service (preferably via Avahi).
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
 |  IoT device that needs to communicate with a server |  ![](stuff/i/SCR-20260420-ljsx.png) |
-| Multimedia devices in IoT that need to communicate with home (mDNS) ... this alone is not enough!  |  ![](stuff/i/SCR-20260420-lkky.png) |
+| Multimedia devices in IoT that must communicate with `home` (mDNS) ... this alone is not enough!  |  ![](stuff/i/SCR-20260420-lkky.png) |
 
 
 # Configuring Avahi for intra-zone mDNS
 
 > [!TIP]
-> If the SSH connection doesn't work, try the following command:
+> On some routers it is necessary to use this SSH command:
 
 ```bash
 ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa root@192.168.10.1
+
+scp -O -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa root@192.168.10.1:/root/file ./
 ```
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
-| Enable SSH access from the home VLAN  |  ![](stuff/i/SCR-20260420-llvs.png) |
+| Enable SSH access from the `home` VLAN |  ![](stuff/i/SCR-20260420-llvs.png) |
 |  Test SSH connection |  ![](stuff/i/SCR-20260420-lmsf.png) |
 |  Search for Avahi packages |  ![](stuff/i/SCR-20260420-loat.png) |
-|  Installing Avahi |  ![](stuff/i/SCR-20260420-logg.png) |
-|  Installed packages |  ![](stuff/i/SCR-20260420-lpav.png) |
+|  Install Avahi (**use the DBUS version**) |  ![](stuff/i/SCR-20260420-logg.png) |
+|  Installed packages |  ![](stuff/i/SCR-20260426-lbgo.png) |
 
 ## Avahi configuration
+
+> [!WARNING]  
+> As indicated in the firewall section, for mDNS to work correctly you must also configure the firewall rules as shown below.
+
+### Configuration
 
 Configuration file:
 
@@ -257,16 +303,56 @@ Modify according to your zones.
 
 ```ini
 [server]
+#host-name=foo
+#domain-name=local
 use-ipv4=yes
-use-ipv6=no
-allow-interfaces=br-home,br-iot   # your VLANs/bridges
-ratelimit-interval-usec=1000000
-ratelimit-burst=1000
+use-ipv6=yes
+check-response-ttl=no
+use-iff-running=no
+allow-interfaces=br-home,br-iot
+
+[publish]
+publish-addresses=yes
+publish-hinfo=yes
+publish-workstation=no
+publish-domain=yes
+#publish-dns-servers=192.168.1.1
+#publish-resolv-conf-dns-servers=yes
 
 [reflector]
 enable-reflector=yes
 reflect-ipv=no
+
+[rlimits]
+#rlimit-as=
+rlimit-core=0
+rlimit-data=4194304
+rlimit-fsize=0
+rlimit-nofile=30
+rlimit-stack=4194304
+rlimit-nproc=3
 ```
+
+**Pay close attention to**
+
+```ini
+allow-interfaces=br-home,br-iot
+enable-reflector=yes
+```
+
+### Firewall rules required for operation
+
+|  Description | Screenshot  |
+| ------------ | ------------ |
+| Create a rule to allow mDNS traffic from the `iot` zone to the router |  ![](./stuff/i/SCR-20260426-lcmr.png) |
+| Result |  ![](./stuff/i/SCR-20260426-lcwf.png) |
+<!-- |   |  ![](./stuff/i/.png) |
+|   |  ![](./stuff/i/.png) | -->
+
+> [!TIP]
+> It would be advisable to enable mDNS for all zones.
+
+### Activation
 
 Restart the service:
 
@@ -279,33 +365,78 @@ ps | grep avahi
 logread | grep -i avahi
 ```
 
-> [!WARNING]  
-> As noted in the firewall section, for mDNS to work correctly you also need to configure firewall rules!
+# Basic configuration summary
+
+> [!NOTE]  
+> This section is a basic working configuration and serves as a short summary of what has been shown so far.
+
+> [!IMPORTANT]  
+> This is only an example; it does not implement all the security rules that may be necessary.
+
+> [!TIP]  
+> It is recommended to configure the firewall rules as follows:
+> 
+> first enable generic forwarding rules between zones:
+> for safety, disable input and forward (which will then be configured, where needed, through traffic rules)
+> 
+> 1. enable DNS for all zones
+> 2. enable DHCP for all zones
+> 3. enable specific rules for the desired traffic
+> 4. enable mDNS where necessary
+> 5. disable all traffic from a given zone toward the others
+
+
+|  Description | Screenshot  |
+| ------------ | ------------ |
+| Physical switch configuration |  ![](./stuff/i/r1/SCR-20260426-lemh.png) |
+| Interface configuration |  ![](./stuff/i/r1/SCR-20260426-leve.png) |
+| Wireless networks |  ![](./stuff/i/r1/SCR-20260426-lfgq.png) |
+| Firewall zones |  ![](./stuff/i/r1/SCR-20260426-lftw.png) |
+| Firewall traffic rules (`iot->home` ban is technically **SUPERFLUOUS** because the `iot` zone already blocks forwarding in the firewall zone configuration) |  ![](./stuff/i/r1/SCR-20260426-lgoq.png) |
+| Avahi for mDNS |  ![](./stuff/i/r1/SCR-20260426-licz.png) |
+<!-- |   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) |
+|   |  ![](./stuff/i/r1/.png) | -->
+
+## Possible IoT->home rules
+
+- Traffic from `home` is enabled by default toward every zone (zone forwarding enabled + intra-VLAN traffic configured through the zone rules)
+
+![](./stuff/i/SCR-20260426-qqiw.png)
 
 # Troubleshooting
 
 ## Firewall
 
 > [!CAUTION]
-> Rules are interpreted in order, from first to last. So a specific *allow* must come before a generic *deny*.
+> Rules are interpreted in order, from first to last. Therefore a specific *allow* must be placed before a generic *deny*.
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
-|  The 2 VLANs are not communicating --> adding manual rules |  ![](stuff/i/SCR-20260420-mdsk.png) |
+|  The 2 VLANs are not communicating --> add manual rules |  ![](stuff/i/SCR-20260420-mdsk.png) |
 |   |  ![](stuff/i/SCR-20260420-mdxz.png) |
 |   |  ![](stuff/i/SCR-20260420-mgkr.png) |
-|   |  ![](stuff/i/.png) |
-|   |  ![](stuff/i/.png) |
+<!-- |   |  ![](stuff/i/.png) |
+|   |  ![](stuff/i/.png) | -->
 
-## Old OpenWRT (or new too???) traffic not working (to be confirmed)
+## Intra-VLAN traffic does not work
 
-If traffic between zones is not working, then (example):
+If traffic between zones does not work, then (example):
 
-1. forwarding from server to iot  (ENABLE ZONE-TO-ZONE FORWARD in the zone rules)
-2. rule ACCEPT from 192.168.8.30 to 192.168.30.21  (allows the connection between the two devices via traffic rules)
-3. rule ACCEPT from 192.168.30.21 to 192.168.8.30  (allows return packets via traffic rules)
-4. rule REJECT from server to iot  (blocks everything else via traffic rules)
-5. rule REJECT from iot to server  (blocks everything else via traffic rules)
+1. forwarding from `server` to `iot`  (ENABLE ZONE-TO-ZONE FORWARD in the zone rules)
+2. rule ACCEPT from 192.168.8.30 to 192.168.30.21  (allows the connection between the two devices through traffic rules)
+3. rule ACCEPT from 192.168.30.21 to 192.168.8.30  (allows return packets through traffic rules)
+4. rule REJECT from `server` to `iot`  (blocks everything else through traffic rules)
+5. rule REJECT from `iot` to `server`  (blocks everything else through traffic rules)
 
 Sources used to reach this conclusion:
 
@@ -336,7 +467,7 @@ stack traceback:
 	/usr/lib/lua/luci/dispatcher.lua:127: in function </usr/lib/lua/luci/dispatcher.lua:126>
 ```
 
-Solution (via SSH on the router):
+solution (via SSH on the router):
 
 ```bash
 ls /etc/init.d/ | grep -E "nginx|httpd|luci"
@@ -402,59 +533,35 @@ ubus call uci get '{"config":"luci","section":"main"}'
 /etc/init.d/uhttpd restart
 ```
 
-## Avahi not working (still to be fixed)
-
-```bash
-# Enable multicast on br-iot if not present
-ip link set br-iot multicast on
-
-# Restart avahi
-/etc/init.d/avahi-daemon restart
-```
-
-# Network testing
-
-## Manual MAC address to IP assignment
-
-| Details  | Screenshot  |
-| ------------ | ------------ |
-|  Manual assignment |  ![](stuff/i/SCR-20260420-mbvj.png) |
-
-## Updating firewall rules for a realistic environment
-
-| Details  | Screenshot  |
-| ------------ | ------------ |
-|  Server 2 cam |  ![](stuff/i/SCR-20260420-mcvf.png) |
-
-## Useful commands
+# Useful commands
 
 ### DHCP
 
 ```bash
-# View all active DHCP leases
+# Show all active DHCP leases
 cat /tmp/dhcp.leases
 
 # Or with more details (MAC, IP, hostname)
 cat /tmp/dhcp.leases | awk '{print $3, $4, $2}'
 
-# Also view devices responding on the network
+# Also view the devices responding on the network
 arp -a
 ```
 
 ### Check firewall rules
 
 ```bash
-# View all firewall rules with names
+# Show all firewall rules with names
 uci show firewall | grep -E "name|src_ip|dest_ip|target"
 ```
 
-View only forwarding rules:
+Show only forwarding rules:
 
 ```bash
 uci show firewall | grep -n "forwarding"
 ```
 
-### Adding rules via SSH
+### Add rules via SSH
 
 ```bash
 # From server (Pi5) to iot (cam)
@@ -482,7 +589,7 @@ uci commit firewall
 /etc/init.d/firewall restart
 ```
 
-### Fixing rules via SSH
+### Fix rules via SSH
 
 ```bash
 uci set firewall.@rule[21].dest_ip='192.168.30.21'
@@ -490,24 +597,21 @@ uci commit firewall
 /etc/init.d/firewall restart
 ```
 
+# Network testing
+
 ## Path testing
 
 | Details  | Screenshot  |
 | ------------ | ------------ |
 |  from home to server |  ![](stuff/i/SCR-20260420-mtnf.png) |
 |  from server to iot |  ![](stuff/i/SCR-20260420-mtlm.png) |
+
 <!-- |   |  ![](stuff/i/.png) |
 |   |  ![](stuff/i/.png) |
 |   |  ![](stuff/i/.png) |
 |   |  ![](stuff/i/.png) | -->
 
-## Avahi testing
-
-| Details  | Screenshot  |
-| ------------ | ------------ |
-|  Firewall rule for forwarding |  ![](stuff/i/SCR-20260420-mvpn.png) |
-| Specific firewall rules  |  ![](stuff/i/SCR-20260420-mver.png) |
-|  Test |  ![](stuff/i/.png) |
+<!-- |  Test |  ![](stuff/i/.png) | -->
 
 <!--
 | ![](stuff/i/.png)  | ![](stuff/i/.png)  |
@@ -528,7 +632,6 @@ uci commit firewall
 
 -->
 
-
 # Explanations for nOObs
 
 > [!WARNING]  
@@ -538,80 +641,88 @@ uci commit firewall
 
 When you connect multiple devices (PC, phone, smart TV, cameras) to the same router, they all end up on the same **local network (LAN)**. By default, they all "see" each other: your PC can talk to the IoT camera, the smart TV can attempt connections to your NAS, etc.
 
-This is fine for a simple network, but it's a security problem: if an IoT device (typically poorly secured) is compromised, the attacker gains access to your entire network.
+This is fine for a simple network, but it is a security problem: if an IoT device (typically not very secure) is compromised, the attacker gains access to the whole network.
 
 ## What is a switch?
 
-A **switch** is the physical "hub" of your network: it's the component (often integrated into the router) that receives data from one port and routes it to the correct destination port. Every device connected via ethernet cable is connected to a port on the switch.
+A **switch** is the physical "switchboard" of your network: it is the component (often integrated into the router) that receives data from one port and forwards it to the correct destination port. Every device connected via Ethernet cable is connected to a port on the switch.
 
 Without VLANs, a switch sends broadcast traffic (network announcements, DHCP requests, mDNS, etc.) to **all** ports: every device receives everything.
 
 ## What is a VLAN?
 
-A **VLAN (Virtual LAN)** is a virtual local network: it allows you to logically divide a physical switch into multiple isolated "virtual" switches, without needing separate hardware.
+A **VLAN (Virtual LAN)** is a virtual local network: it lets you logically divide a physical switch into multiple isolated "virtual" switches, without needing separate hardware.
 
 ```
-Without VLANs:
-[PC] [Phone] [IoT Camera] [NAS]  <-- all on the same network, all visible to each other
+Without VLAN:
+[PC] [Phone] [IoT Camera] [NAS]  <-- all on the same network, all can see each other
 
-With VLANs:
+With VLAN:
 VLAN home:    [PC] [Phone]
 VLAN iot:     [IoT Camera]
 VLAN server:  [NAS]
               ^--- isolated from each other, the firewall decides who can talk to whom
 ```
 
-Each VLAN has a numeric identifier (VLAN ID) that is "tagged" on ethernet packets, so the switch knows which virtual network each packet belongs to.
+Each VLAN has an identifier number (VLAN ID) that is "tagged" onto Ethernet packets, so the switch knows which virtual network each packet belongs to.
 
 ## What are OpenWRT and LuCI?
 
-**OpenWRT** is an alternative Linux operating system for routers, far more flexible than factory firmware. GL.iNet routers support it natively.
+**OpenWRT** is an alternative Linux operating system for routers, much more flexible than factory firmware. GL.iNet routers support it natively.
 
-**LuCI** is OpenWRT's graphical web interface: it lets you configure everything from a browser instead of using the command line.
+**LuCI** is OpenWRT's graphical web interface: it lets you configure everything from the browser instead of using the command line.
 
-## Why do the guide steps need to be done in this order?
+OpenWRT also already includes a fundamental concept: the **bridge**. A bridge is an internal "software switch" inside the router that brings together physical ports, VLANs, and logical interfaces into a single management point. This is why names like `br-lan`, `br-home`, and `br-iot` appear in the guide.
+
+These bridges are often **already preconfigured** because OpenWRT, especially on modern DSA devices, creates a default LAN bridge (`br-lan`) so the LAN ports immediately work as a single local network. This is not an optional detail: it is part of how OpenWRT internally organizes networking.
+
+For this reason, bridges generally **should not be created manually at random**: in most cases you should start from the ones that already exist and modify or associate them correctly with your VLANs. Creating unnecessary or duplicate bridges can lead to inconsistent configurations, loss of connectivity, ports ending up in the wrong bridge, or conflicts with the existing `br-lan`.
+
+## Why must the guide steps be done in this order?
 
 ### 1. First configure the physical switch (VLANs on physical devices)
 
-The switch integrated in the router needs to know which ports belong to which VLAN. This is the lowest level: hardware. Without this step, packets are not correctly routed at the physical level.
+The switch integrated into the router must know which ports belong to which VLAN. This is the lowest level: hardware. Without this step, packets are not routed correctly at the physical level.
 
-> If you skip this step: devices connected via cable won't be assigned to the correct VLAN.
+> If you skip this step: devices connected by cable are not assigned to the correct VLAN.
 
 ### 2. Then create the logical interfaces
 
-OpenWRT needs a **software interface** for each VLAN: this is like telling the operating system "this VLAN exists, I'm assigning it IP address X.X.X.1, I'm managing its DHCP from here". Each interface corresponds to a bridge (e.g. `br-home`, `br-iot`) that acts as the router's "entry point" into that VLAN.
+OpenWRT must have a **software interface** for each VLAN: it is like telling the operating system "this VLAN exists, I assign it IP address X.X.X.1, and I manage its DHCP from here". Each interface corresponds to a bridge (e.g. `br-home`, `br-iot`) that acts as the router's "entry point" into that VLAN.
 
-> If you skip this step: the router doesn't know how to handle traffic for that VLAN, and devices won't receive an IP address.
+In practice, you are not "inventing the router network from scratch": you are correctly connecting the VLANs to the bridges that OpenWRT already uses as its internal structure. That is why this guide first removes the LAN from the default bridge and then reassigns everything in an orderly way, instead of creating bridges manually without a clear reason.
+
+> If you skip this step: the router does not know how to manage traffic for that VLAN, and devices do not receive an IP.
 
 ### 3. Then configure the wireless networks
 
-Wi-Fi networks (SSIDs) must be **associated** with a specific VLAN/interface. Otherwise, all wireless devices end up on the same network regardless of which Wi-Fi they connect to.
+The Wi-Fi networks (SSIDs) must be **associated** with a specific VLAN/interface. Otherwise, all wireless devices end up in the same network regardless of which Wi-Fi they connect to.
 
-> If you skip this step: creating separate SSIDs is pointless — all wireless traffic still goes to the same network.
+> If you skip this step: creating separate SSIDs is useless, because all wireless traffic still goes to the same network.
 
 ### 4. Then configure the firewall
 
-By default in OpenWRT, once VLANs are created, they are **completely isolated**: no zone can communicate with the others. The firewall must be explicitly configured to:
+By default, once VLANs are created, OpenWRT **completely isolates** them: no zone can communicate with the others. The firewall must be configured explicitly to:
 
 - **Allow internet access (WAN)** from all zones — without this rule, IoT devices have no internet
-- **Enable DNS** — DNS is the service that translates `google.com` into an IP address. If not explicitly enabled for each zone, websites won't load even if connectivity is present
+- **Enable DNS** — DNS is the service that translates `google.com` into an IP address. If it is not explicitly enabled for each zone, websites will not open even if connectivity exists
 - **Enable DHCP** — DHCP is the service that automatically assigns an IP address to devices when they connect. Without it, devices remain without an IP
-- **Define intra-zone forwarding** — if you want your PC (in `home`) to be able to see the NAS (in `server`), you must tell the firewall explicitly
+- **Define intra-zone forwardings** — if you want your PC (in `home`) to see the NAS (in `server`), you must explicitly tell the firewall
 
-> If you skip this step: internet won't work on the new VLANs, or some VLANs won't be able to communicate with the ones they should.
+> If you skip this step: internet will not work on the new VLANs, or some VLANs will not be able to communicate with the ones they should.
 
 > [!CAUTION]
-> Firewall rules are read from top to bottom. A specific `ALLOW` rule must come **before** a generic `DENY`, otherwise it is ignored and the generic block takes precedence.
+> Firewall rules are read from top to bottom. A specific `ALLOW` rule must be placed **before** a generic `DENY`, otherwise it is ignored and the generic block takes precedence.
 
 ### 5. Finally configure Avahi for mDNS
 
-**mDNS (multicast DNS)** is the protocol used by Apple devices (AirPlay, AirPrint), Chromecast, network printers, etc. to "announce" themselves on the local network without needing a central DNS server.
+**mDNS (multicast DNS)** is the protocol used by Apple devices (AirPlay, AirPrint), Chromecast, network printers, etc. to "announce themselves" on the local network without needing a central DNS server.
 
-The problem: mDNS uses **multicast** packets that by definition do not cross network boundaries. If your Apple TV is on the `iot` VLAN and your Mac is on the `home` VLAN, they can't see each other.
+The problem: mDNS uses **multicast** packets that, by definition, do not cross network boundaries. If your Apple TV is in the `iot` VLAN and your Mac is in the `home` VLAN, they cannot see each other.
 
-**Avahi** is a service that acts as a "translator": it listens for mDNS announcements on one VLAN and "reflects" them onto the others. It must be configured after the firewall because it needs the interfaces to already exist and the multicast firewall rules to be active.
+**Avahi** is a service that acts as a "translator": it listens to mDNS announcements on one VLAN and "reflects" them to the others. It must be configured after the firewall because it needs the interfaces to already exist and the multicast firewall rules to be active.
 
-> If you skip this step: Chromecast, AirPlay, network printers won't work across different VLANs.
+> If you skip this step: Chromecast, AirPlay, and network printers will not work across different VLANs.
 
 ## Visual summary
 
@@ -637,19 +748,19 @@ The problem: mDNS uses **multicast** packets that by definition do not cross net
 ## Quick glossary
 
 | Term | Simple explanation |
-|------|--------------------|
+|---------|----------------------|
 | **LAN** | Your home network |
 | **WAN** | The internet (the "external" network) |
-| **VLAN** | A logically isolated virtual subnetwork |
-| **Switch** | The physical "hub" that routes ethernet cables |
+| **VLAN** | A logically isolated virtual subnet |
+| **Switch** | The physical "switchboard" that routes Ethernet cables |
 | **Bridge** | A software component that joins multiple network interfaces |
-| **DHCP** | The service that automatically assigns an IP to devices |
-| **DNS** | The service that translates names (google.com) into IP addresses |
+| **DHCP** | The service that automatically gives devices an IP |
+| **DNS** | The service that translates names (`google.com`) into IP addresses |
 | **Firewall** | The "gatekeeper" that decides which connections are allowed |
 | **Zone (firewall)** | A group of interfaces with the same security rules |
-| **Forward** | Allowing traffic to pass from one zone to another |
+| **Forward** | Allow traffic to pass from one zone to another |
 | **mDNS** | Protocol for discovering local devices (Chromecast, AirPlay) |
-| **Avahi** | Service that propagates mDNS across different VLANs |
+| **Avahi** | Service that propagates mDNS between different VLANs |
 | **LuCI** | OpenWRT's graphical web interface |
 | **OpenWRT** | Linux operating system for routers |
 
