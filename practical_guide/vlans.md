@@ -27,20 +27,16 @@
   - [Eventuali regole per IoT-\>home](#eventuali-regole-per-iot-home)
 - [Trubleshooting](#trubleshooting)
   - [Firewall](#firewall)
-  - [Vecchi OpenWRT (o anche nuovi???) traffico non funziona (da confermare)](#vecchi-openwrt-o-anche-nuovi-traffico-non-funziona-da-confermare)
+  - [Traffico intra-vlan non funziona](#traffico-intra-vlan-non-funziona)
   - [(luci rotto) Aggiungere regola per server-\>iot](#luci-rotto-aggiungere-regola-per-server-iot)
   - [Luci corrotto](#luci-corrotto)
-  - [Avahi non funziona (ancora da fixare)](#avahi-non-funziona-ancora-da-fixare)
-- [Test della rete](#test-della-rete)
-  - [Associazione manuale dei mac address agli indirizzi ip](#associazione-manuale-dei-mac-address-agli-indirizzi-ip)
-  - [Aggiornamento delle regole firewall per ambiente realistico](#aggiornamento-delle-regole-firewall-per-ambiente-realistico)
-  - [Comandi utili](#comandi-utili)
+- [Comandi utili](#comandi-utili)
     - [DHCP](#dhcp)
     - [Check regole firewall](#check-regole-firewall)
     - [Aggiunta regole via ssh](#aggiunta-regole-via-ssh)
     - [Fix regole via ssh](#fix-regole-via-ssh)
+- [Test della rete](#test-della-rete)
   - [Test dei path](#test-dei-path)
-  - [Test Avahi](#test-avahi)
 - [Spiegazioni per i nOObs](#spiegazioni-per-i-noobs)
   - [Cos'e' una rete locale (LAN)?](#cose-una-rete-locale-lan)
   - [Cos'e' uno switch?](#cose-uno-switch)
@@ -425,10 +421,10 @@ logread | grep -i avahi
 |  Le 2 VLAN non comunicano --> aggiunta di regole manuali |  ![](stuff/i/SCR-20260420-mdsk.png) |
 |   |  ![](stuff/i/SCR-20260420-mdxz.png) |
 |   |  ![](stuff/i/SCR-20260420-mgkr.png) |
-|   |  ![](stuff/i/.png) |
-|   |  ![](stuff/i/.png) |
+<!-- |   |  ![](stuff/i/.png) |
+|   |  ![](stuff/i/.png) | -->
 
-## Vecchi OpenWRT (o anche nuovi???) traffico non funziona (da confermare)
+## Traffico intra-vlan non funziona
 
 Se il traffico tra zone non funziona, allora (esempio):
 
@@ -533,31 +529,7 @@ ubus call uci get '{"config":"luci","section":"main"}'
 /etc/init.d/uhttpd restart
 ```
 
-## Avahi non funziona (ancora da fixare)
-
-```bash
-# Abilita multicast su br-iot se non presente
-ip link set br-iot multicast on
-
-# Riavvia avahi
-/etc/init.d/avahi-daemon restart
-```
-
-# Test della rete
-
-## Associazione manuale dei mac address agli indirizzi ip
-
-| Dettagli  | Screenshot  |
-| ------------ | ------------ |
-|  Associazione manuale |  ![](stuff/i/SCR-20260420-mbvj.png) |
-
-## Aggiornamento delle regole firewall per ambiente realistico
-
-| Dettagli  | Screenshot  |
-| ------------ | ------------ |
-|  Server 2 cam |  ![](stuff/i/SCR-20260420-mcvf.png) |
-
-## Comandi utili
+# Comandi utili
 
 ### DHCP
 
@@ -621,24 +593,21 @@ uci commit firewall
 /etc/init.d/firewall restart
 ```
 
+# Test della rete
+
 ## Test dei path
 
 | Dettagli  | Screenshot  |
 | ------------ | ------------ |
 |  da home a server |  ![](stuff/i/SCR-20260420-mtnf.png) |
 |  da server a iot |  ![](stuff/i/SCR-20260420-mtlm.png) |
+
 <!-- |   |  ![](stuff/i/.png) |
 |   |  ![](stuff/i/.png) |
 |   |  ![](stuff/i/.png) |
 |   |  ![](stuff/i/.png) | -->
 
-## Test Avahi
-
-| Dettagli  | Screenshot  |
-| ------------ | ------------ |
-|  Regola firewall per forward |  ![](stuff/i/SCR-20260420-mvpn.png) |
-| Regole firewall specifiche  |  ![](stuff/i/SCR-20260420-mver.png) |
-|  Test |  ![](stuff/i/.png) |
+<!-- |  Test |  ![](stuff/i/.png) | -->
 
 <!--
 | ![](stuff/i/.png)  | ![](stuff/i/.png)  |
@@ -658,7 +627,6 @@ uci commit firewall
 
 
 -->
-
 
 # Spiegazioni per i nOObs
 
@@ -700,6 +668,12 @@ Ogni VLAN ha un numero identificativo (VLAN ID) che viene "taggato" sui pacchett
 
 **LuCI** e' l'interfaccia web grafica di OpenWRT: ti permette di configurare tutto dal browser invece di usare la riga di comando.
 
+In OpenWRT esiste gia' anche un concetto fondamentale: il **bridge**. Un bridge e' uno "switch software" interno al router che unisce porte fisiche, VLAN e interfacce logiche in un unico punto di gestione. Per questo nella guida compaiono nomi come `br-lan`, `br-home` o `br-iot`.
+
+Questi bridge sono spesso **gia' preconfigurati** perche' OpenWRT, soprattutto sui dispositivi moderni con DSA, crea di default un bridge LAN di base (`br-lan`) per far funzionare subito le porte LAN come un'unica rete locale. Non e' un dettaglio opzionale: e' parte del modo in cui OpenWRT organizza internamente la rete.
+
+Per questo motivo i bridge **non vanno creati a mano alla cieca**: nella maggior parte dei casi bisogna partire da quelli gia' presenti e modificarli o associarli correttamente alle VLAN. Creare bridge manuali inutili o duplicati puo' portare a configurazioni incoerenti, perdita di connettivita', porte finite nel bridge sbagliato o conflitti con `br-lan` gia' esistente.
+
 ## Perche' i passaggi della guida vanno fatti in quest'ordine?
 
 ### 1. Prima si configura lo switch fisico (VLAN sui dispositivi fisici)
@@ -711,6 +685,8 @@ Lo switch integrato nel router deve sapere quali porte appartengono a quale VLAN
 ### 2. Poi si creano le interfacce logiche
 
 OpenWRT deve avere un'**interfaccia software** per ciascuna VLAN: e' come dire al sistema operativo "questa VLAN esiste, le assegno l'indirizzo IP X.X.X.1, gestisco il suo DHCP da qui". Ogni interfaccia corrisponde a un bridge (es. `br-home`, `br-iot`) che fa da "punto di accesso" del router verso quella VLAN.
+
+In pratica non si sta "inventando da zero" la rete del router: si stanno collegando correttamente le VLAN ai bridge che OpenWRT usa gia' come struttura interna. Ecco perche' in questa guida si rimuove prima la LAN dal bridge di default e poi si riassegna tutto in modo ordinato, invece di creare bridge manuali senza criterio.
 
 > Se salti questo passaggio: il router non sa come gestire il traffico di quella VLAN, i dispositivi non ricevono un IP.
 
