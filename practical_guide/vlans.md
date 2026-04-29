@@ -6,6 +6,7 @@
   - [Modifica indirizzo di rete di default](#modifica-indirizzo-di-rete-di-default)
 - [Configurazione delle VLAN per i dispositivi fisici](#configurazione-delle-vlan-per-i-dispositivi-fisici)
   - [Native VLAN](#native-vlan)
+    - [Uso della native VLAN per la configurazione di eventuali server Proxmox](#uso-della-native-vlan-per-la-configurazione-di-eventuali-server-proxmox)
   - [Rimuovere la LAN principale da br-lan di default e associarla alla VLAN principale](#rimuovere-la-lan-principale-da-br-lan-di-default-e-associarla-alla-vlan-principale)
   - [Definire le interfacce per tutte le VLAN](#definire-le-interfacce-per-tutte-le-vlan)
     - [Definizione di tutte le interfacce](#definizione-di-tutte-le-interfacce)
@@ -123,6 +124,17 @@ SCR-20260422-rkde
 > Per evitare di essere escluso dalla rete, effettuare la prima configurazione, impostando una porta LAN del router come Native VLAN (`primary VLAN ID`) sulla VLAN di management
 
 ![](stuff/i/SCR-20260429-hxev.png)
+
+### Uso della native VLAN per la configurazione di eventuali server Proxmox
+
+Proxmox supporta molto bene le VLAN. Configurare come segue:
+
+1. usare una porta tagged (trunk) con native vlan per installare proxmox
+   1. N.B.: proxmox non supporta il tagging durante la fase di installazione
+2. Attivare la funzionalita' `vlan aware`
+3. configurare proxmox per utilizzare la VLAN desiderata (`server`)
+4. quando si creano i container/vm specificare la vlan desiderata durante la configurazione della rete
+
 
 ## Rimuovere la LAN principale da br-lan di default e associarla alla VLAN principale
 
