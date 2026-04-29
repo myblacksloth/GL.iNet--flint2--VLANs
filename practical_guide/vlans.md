@@ -5,6 +5,7 @@
   - [Connessione VLAN](#connessione-vlan)
   - [Modifica indirizzo di rete di default](#modifica-indirizzo-di-rete-di-default)
 - [Configurazione delle VLAN per i dispositivi fisici](#configurazione-delle-vlan-per-i-dispositivi-fisici)
+  - [Native VLAN](#native-vlan)
   - [Rimuovere la LAN principale da br-lan di default e associarla alla VLAN principale](#rimuovere-la-lan-principale-da-br-lan-di-default-e-associarla-alla-vlan-principale)
   - [Definire le interfacce per tutte le VLAN](#definire-le-interfacce-per-tutte-le-vlan)
     - [Definizione di tutte le interfacce](#definizione-di-tutte-le-interfacce)
@@ -115,6 +116,13 @@ SCR-20260420-ksqv
 -->
 
 SCR-20260422-rkde
+
+## Native VLAN
+
+> [!WARNING]  
+> Per evitare di essere escluso dalla rete, effettuare la prima configurazione, impostando una porta LAN del router come Native VLAN (`primary VLAN ID`) sulla VLAN di management
+
+![](stuff/i/SCR-20260429-hxev.png)
 
 ## Rimuovere la LAN principale da br-lan di default e associarla alla VLAN principale
 
